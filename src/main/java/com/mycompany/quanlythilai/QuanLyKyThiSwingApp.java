@@ -1,0 +1,112 @@
+package com.mycompany.quanlythilai;
+
+import com.mycompany.quanlythilai.model.*;
+import com.mycompany.quanlythilai.service.QuanLyKyThi;
+import com.mycompany.quanlythilai.service.ThongKe;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.LocalDate;
+
+/** Main desktop UI for the driving-license examination system. */
+public final class QuanLyKyThiSwingApp extends JFrame {
+    private final QuanLyKyThi manager = new QuanLyKyThi();
+    private final DefaultTableModel candidateModel = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "CCCD", "Hạng bằng", "Trạng thái hồ sơ"}, 0);
+    private final DefaultTableModel examModel = new DefaultTableModel(new String[]{"Mã kỳ thi", "Tên kỳ thi", "Hạng", "Địa điểm", "Ngày thi", "Số người", "Trạng thái"}, 0);
+    private final JLabel statisticLabel = new JLabel();
+
+    public QuanLyKyThiSwingApp() {
+        setTitle("Quản lý các kỳ thi sát hạch lái xe");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(1100, 650);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        JLabel heading = new JLabel("QUẢN LÝ CÁC KỲ THI SÁT HẠCH LÁI XE", SwingConstants.CENTER);
+        heading.setFont(new Font("Arial", Font.BOLD, 24));
+        heading.setBorder(BorderFactory.createEmptyBorder(14, 5, 14, 5));
+        add(heading, BorderLayout.NORTH);
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Người thi", candidatePanel());
+        tabs.addTab("Kỳ thi và lịch thi", examPanel());
+        tabs.addTab("Giám thị", invigilatorPanel());
+        tabs.addTab("Thống kê", statisticPanel());
+        add(tabs, BorderLayout.CENTER);
+    }
+
+    private JPanel candidatePanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
+        JTextField id = field("Mã người thi"), name = field("Họ tên"), birth = field("Ngày sinh yyyy-MM-dd"), citizen = field("CCCD"), phone = field("Điện thoại"), license = field("Hạng bằng");
+        for (JTextField input : new JTextField[]{id, name, birth, citizen, phone, license}) form.add(input);
+        JButton add = new JButton("Thêm người thi");
+        add.addActionListener(e -> run(() -> {
+            NguoiThi candidate = new NguoiThi(id.getText(), name.getText(), LocalDate.parse(birth.getText()), citizen.getText(), "Chưa cập nhật", phone.getText(), license.getText(), 0);
+            manager.addCandidate(candidate);
+            candidateModel.addRow(new Object[]{candidate.getId(), candidate.getFullName(), candidate.getBirthDate(), candidate.getCitizenId(), candidate.getLicenseClass(), candidate.getProfileStatus()});
+            clear(id, name, birth, citizen, phone, license);
+        }));
+        panel.add(form, BorderLayout.NORTH);
+        panel.add(new JScrollPane(new JTable(candidateModel)), BorderLayout.CENTER);
+        panel.add(add, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel examPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
+        JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), license = field("Hạng bằng"), location = field("Địa điểm"), date = field("Ngày thi yyyy-MM-dd"), invigilator = field("Mã giám thị");
+        for (JTextField input : new JTextField[]{id, name, license, location, date, invigilator}) form.add(input);
+        JButton add = new JButton("Thêm kỳ thi");
+        add.addActionListener(e -> run(() -> {
+            KyThi exam = new KyThi(id.getText(), name.getText(), license.getText(), location.getText(), LocalDate.parse(date.getText()), invigilator.getText());
+            manager.addExam(exam);
+            examModel.addRow(new Object[]{exam.getId(), exam.getName(), exam.getLicenseClass(), exam.getLocation(), exam.getExamDate(), 0, exam.getStatus()});
+            clear(id, name, license, location, date, invigilator);
+        }));
+        panel.add(form, BorderLayout.NORTH);
+        panel.add(new JScrollPane(new JTable(examModel)), BorderLayout.CENTER);
+        panel.add(add, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel invigilatorPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "Điện thoại", "Chức vụ"}, 0);
+        JPanel form = new JPanel(new GridLayout(2, 5, 6, 6));
+        JTextField id = field("Mã giám thị"), name = field("Họ tên"), birth = field("Ngày sinh yyyy-MM-dd"), phone = field("Điện thoại"), position = field("Chức vụ");
+        for (JTextField input : new JTextField[]{id, name, birth, phone, position}) form.add(input);
+        JButton add = new JButton("Thêm giám thị");
+        add.addActionListener(e -> run(() -> {
+            GiamThi invigilator = new GiamThi(id.getText(), name.getText(), LocalDate.parse(birth.getText()), phone.getText(), position.getText());
+            manager.addInvigilator(invigilator);
+            model.addRow(new Object[]{invigilator.getId(), invigilator.getFullName(), invigilator.getBirthDate(), invigilator.getPhone(), invigilator.getPosition()});
+            clear(id, name, birth, phone, position);
+        }));
+        panel.add(form, BorderLayout.NORTH);
+        panel.add(new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+        panel.add(add, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel statisticPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        statisticLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        statisticLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        JButton refresh = new JButton("Cập nhật thống kê");
+        refresh.addActionListener(e -> updateStatistics());
+        panel.add(statisticLabel, BorderLayout.CENTER);
+        panel.add(refresh, BorderLayout.SOUTH);
+        updateStatistics();
+        return panel;
+    }
+
+    private void updateStatistics() {
+        statisticLabel.setText(String.format("Người thi: %d | Đạt: %d | Không đạt: %d | Tỷ lệ đậu: %.1f%% | Doanh thu: %d VNĐ", ThongKe.soNguoiThi(manager), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
+    }
+
+    private static JTextField field(String tooltip) { JTextField field = new JTextField(); field.setToolTipText(tooltip); field.setBorder(BorderFactory.createTitledBorder(tooltip)); return field; }
+    private static void clear(JTextField... fields) { for (JTextField field : fields) field.setText(""); }
+    private static void run(Runnable action) { try { action.run(); } catch (RuntimeException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.ERROR_MESSAGE); } }
+
+    public static void main(String[] args) { SwingUtilities.invokeLater(() -> new QuanLyKyThiSwingApp().setVisible(true)); }
+}
