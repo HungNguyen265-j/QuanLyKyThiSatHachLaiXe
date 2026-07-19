@@ -1,0 +1,8 @@
+target/
+out/
+.idea/
+*.class
+*.jar
+*.xml
+!.mvn/
+!.idea/compiler.xml
