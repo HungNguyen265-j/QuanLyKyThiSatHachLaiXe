@@ -285,7 +285,7 @@ public final class QuanLyKyThiSwingApp extends JFrame {
             form.add(new JLabel("Tài khoản:")); form.add(username);
             form.add(new JLabel("Mật khẩu:")); form.add(password);
             JButton login = new JButton("Đăng nhập");
-            form.add(new JLabel("Demo: admin / 123456")); form.add(login);
+            form.add(new JLabel()); form.add(login);
             login.addActionListener(e -> authenticate());
             getRootPane().setDefaultButton(login);
             add(form);
