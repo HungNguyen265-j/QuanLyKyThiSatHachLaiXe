@@ -3,12 +3,12 @@ package com.mycompany.quanlythilai;
 import com.mycompany.quanlythilai.model.*;
 import com.mycompany.quanlythilai.service.QuanLyKyThi;
 import com.mycompany.quanlythilai.service.ThongKe;
+import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
 
 /** Main desktop UI for the driving-license examination system. */
 public final class QuanLyKyThiSwingApp extends JFrame {
@@ -41,7 +41,7 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
         JTextField id = field("Mã người thi"), name = field("Họ tên"), citizen = field("CCCD"), phone = field("Điện thoại");
-        JSpinner birth = dateField("Ngày sinh");
+        JDateChooser birth = dateField("Ngày sinh");
         JComboBox<String> license = licenseBox();
         for (JComponent input : new JComponent[]{id, name, birth, citizen, phone, license}) form.add(input);
         JButton add = new JButton("Thêm người thi");
@@ -80,7 +80,7 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 5, 6, 6));
         JTextField id = field("Mã giám thị"), name = field("Họ tên"), phone = field("Điện thoại"), position = field("Chức vụ");
-        JSpinner birth = dateField("Ngày sinh");
+        JDateChooser birth = dateField("Ngày sinh");
         for (JComponent input : new JComponent[]{id, name, birth, phone, position}) form.add(input);
         JButton add = new JButton("Thêm giám thị");
         add.addActionListener(e -> run(() -> {
@@ -149,14 +149,16 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         box.setBorder(BorderFactory.createTitledBorder("Hạng bằng"));
         return box;
     }
-    private static JSpinner dateField(String title) {
-        JSpinner spinner = new JSpinner(new SpinnerDateModel(new Date(), null, null, java.util.Calendar.DAY_OF_MONTH));
-        spinner.setEditor(new JSpinner.DateEditor(spinner, "dd/MM/yyyy"));
-        spinner.setBorder(BorderFactory.createTitledBorder(title));
-        return spinner;
+    private static JDateChooser dateField(String title) {
+        JDateChooser chooser = new JDateChooser();
+        chooser.setDateFormatString("dd/MM/yyyy");
+        chooser.setBorder(BorderFactory.createTitledBorder(title));
+        chooser.setToolTipText("Bấm biểu tượng lịch để chọn ngày");
+        return chooser;
     }
-    private static LocalDate toLocalDate(JSpinner spinner) {
-        return ((Date) spinner.getValue()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    private static LocalDate toLocalDate(JDateChooser chooser) {
+        if (chooser.getDate() == null) throw new IllegalArgumentException("Ngày sinh không được trống");
+        return chooser.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
     private static void clear(JTextField... fields) { for (JTextField field : fields) field.setText(""); }
     private static void run(Runnable action) { try { action.run(); } catch (RuntimeException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.ERROR_MESSAGE); } }
