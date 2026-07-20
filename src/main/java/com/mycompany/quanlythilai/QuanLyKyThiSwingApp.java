@@ -60,15 +60,16 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private JPanel examPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
-        JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), location = field("Địa điểm"), date = field("Ngày thi yyyy-MM-dd"), invigilator = field("Mã giám thị");
+        JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), location = field("Địa điểm"), invigilator = field("Mã giám thị");
+        JDateChooser date = dateField("Ngày thi");
         JComboBox<String> license = licenseBox();
         for (JComponent input : new JComponent[]{id, name, license, location, date, invigilator}) form.add(input);
         JButton add = new JButton("Thêm kỳ thi");
         add.addActionListener(e -> run(() -> {
-            KyThi exam = new KyThi(id.getText(), name.getText(), (String) license.getSelectedItem(), location.getText(), LocalDate.parse(date.getText()), invigilator.getText());
+            KyThi exam = new KyThi(id.getText(), name.getText(), (String) license.getSelectedItem(), location.getText(), toLocalDate(date), invigilator.getText());
             manager.addExam(exam);
             examModel.addRow(new Object[]{exam.getId(), exam.getName(), exam.getLicenseClass(), exam.getLocation(), exam.getExamDate(), 0, exam.getStatus()});
-            clear(id, name, location, date, invigilator);
+            clear(id, name, location, invigilator);
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(examModel)), BorderLayout.CENTER);
