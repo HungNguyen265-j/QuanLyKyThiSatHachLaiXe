@@ -12,6 +12,9 @@ import java.time.ZoneId;
 
 /** Main desktop UI for the driving-license examination system. */
 public final class QuanLyKyThiSwingApp extends JFrame {
+    private static final Color NAVY = new Color(20, 42, 74);
+    private static final Color BLUE = new Color(36, 112, 190);
+    private static final Color LIGHT = new Color(244, 247, 251);
     private final QuanLyKyThi manager = new QuanLyKyThi();
     private final DefaultTableModel candidateModel = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "CCCD", "Hạng bằng", "Trạng thái hồ sơ"}, 0);
     private final DefaultTableModel examModel = new DefaultTableModel(new String[]{"Mã kỳ thi", "Tên kỳ thi", "Hạng", "Địa điểm", "Ngày thi", "Số người", "Trạng thái"}, 0);
@@ -24,11 +27,27 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         setSize(1100, 650);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
-        JLabel heading = new JLabel("QUẢN LÝ CÁC KỲ THI SÁT HẠCH LÁI XE", SwingConstants.CENTER);
+        getContentPane().setBackground(LIGHT);
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(NAVY);
+        header.setBorder(BorderFactory.createEmptyBorder(16, 24, 16, 24));
+        JLabel heading = new JLabel("QUẢN LÝ CÁC KỲ THI SÁT HẠCH LÁI XE");
+        heading.setForeground(Color.WHITE);
         heading.setFont(new Font("Arial", Font.BOLD, 24));
-        heading.setBorder(BorderFactory.createEmptyBorder(14, 5, 14, 5));
-        add(heading, BorderLayout.NORTH);
+        JLabel subtitle = new JLabel("Quản lý hồ sơ, lịch thi, kết quả và lệ phí đăng ký");
+        subtitle.setForeground(new Color(205, 220, 238));
+        subtitle.setFont(new Font("Arial", Font.PLAIN, 13));
+        JPanel titles = new JPanel();
+        titles.setOpaque(false);
+        titles.setLayout(new BoxLayout(titles, BoxLayout.Y_AXIS));
+        titles.add(heading); titles.add(Box.createVerticalStrut(4)); titles.add(subtitle);
+        header.add(titles, BorderLayout.WEST);
+        add(header, BorderLayout.NORTH);
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(new Font("Arial", Font.BOLD, 14));
+        tabs.setBackground(LIGHT);
+        tabs.setForeground(NAVY);
+        tabs.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         tabs.addTab("Người thi", candidatePanel());
         tabs.addTab("Kỳ thi và lịch thi", examPanel());
         tabs.addTab("Giám thị", invigilatorPanel());
@@ -39,7 +58,10 @@ public final class QuanLyKyThiSwingApp extends JFrame {
 
     private JPanel candidatePanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBackground(LIGHT);
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
+        form.setBackground(Color.WHITE);
+        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         JTextField id = field("Mã người thi"), name = field("Họ tên"), citizen = field("CCCD"), phone = field("Điện thoại");
         id.setEditable(false);
         id.setText("Tự động");
@@ -47,6 +69,7 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         JComboBox<String> license = licenseBox();
         for (JComponent input : new JComponent[]{id, name, birth, citizen, phone, license}) form.add(input);
         JButton add = new JButton("Thêm người thi");
+        styleButton(add);
         add.addActionListener(e -> run(() -> {
             id.setText(manager.nextCandidateId());
             NguoiThi candidate = new NguoiThi(id.getText(), name.getText(), toLocalDate(birth), citizen.getText(), "Chưa cập nhật", phone.getText(), (String) license.getSelectedItem(), 0);
@@ -56,19 +79,25 @@ public final class QuanLyKyThiSwingApp extends JFrame {
             id.setText("Tự động");
         }));
         panel.add(form, BorderLayout.NORTH);
-        panel.add(new JScrollPane(new JTable(candidateModel)), BorderLayout.CENTER);
+        JTable table = new JTable(candidateModel);
+        styleTable(table);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
         panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel examPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBackground(LIGHT);
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
+        form.setBackground(Color.WHITE);
+        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), location = field("Địa điểm"), invigilator = field("Mã giám thị");
         JDateChooser date = dateField("Ngày thi");
         JComboBox<String> license = licenseBox();
         for (JComponent input : new JComponent[]{id, name, license, location, date, invigilator}) form.add(input);
         JButton add = new JButton("Thêm kỳ thi");
+        styleButton(add);
         add.addActionListener(e -> run(() -> {
             KyThi exam = new KyThi(id.getText(), name.getText(), (String) license.getSelectedItem(), location.getText(), toLocalDate(date), invigilator.getText());
             manager.addExam(exam);
@@ -76,20 +105,26 @@ public final class QuanLyKyThiSwingApp extends JFrame {
             clear(id, name, location, invigilator);
         }));
         panel.add(form, BorderLayout.NORTH);
-        panel.add(new JScrollPane(new JTable(examModel)), BorderLayout.CENTER);
+        JTable table = new JTable(examModel);
+        styleTable(table);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
         panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel invigilatorPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBackground(LIGHT);
         JPanel form = new JPanel(new GridLayout(2, 5, 6, 6));
+        form.setBackground(Color.WHITE);
+        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         JTextField id = field("Mã giám thị"), name = field("Họ tên"), phone = field("Điện thoại"), position = field("Chức vụ");
         id.setEditable(false);
         id.setText("Tự động");
         JDateChooser birth = dateField("Ngày sinh");
         for (JComponent input : new JComponent[]{id, name, birth, phone, position}) form.add(input);
         JButton add = new JButton("Thêm giám thị");
+        styleButton(add);
         add.addActionListener(e -> run(() -> {
             id.setText(manager.nextInvigilatorId());
             GiamThi invigilator = new GiamThi(id.getText(), name.getText(), toLocalDate(birth), phone.getText(), position.getText());
@@ -99,16 +134,21 @@ public final class QuanLyKyThiSwingApp extends JFrame {
             id.setText("Tự động");
         }));
         panel.add(form, BorderLayout.NORTH);
-        panel.add(new JScrollPane(new JTable(invigilatorModel)), BorderLayout.CENTER);
+        JTable table = new JTable(invigilatorModel);
+        styleTable(table);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
         panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel statisticPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(LIGHT);
         statisticLabel.setHorizontalAlignment(SwingConstants.CENTER);
         statisticLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        statisticLabel.setForeground(NAVY);
         JButton refresh = new JButton("Cập nhật thống kê");
+        styleButton(refresh);
         refresh.addActionListener(e -> updateStatistics());
         panel.add(statisticLabel, BorderLayout.CENTER);
         panel.add(refresh, BorderLayout.SOUTH);
@@ -153,6 +193,23 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     }
 
     private static JTextField field(String tooltip) { JTextField field = new JTextField(); field.setToolTipText(tooltip); field.setBorder(BorderFactory.createTitledBorder(tooltip)); return field; }
+    private static void styleButton(JButton button) {
+        button.setBackground(BLUE);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+    }
+    private static void styleTable(JTable table) {
+        table.setFont(new Font("Arial", Font.PLAIN, 13));
+        table.setRowHeight(30);
+        table.setGridColor(new Color(220, 228, 238));
+        table.setSelectionBackground(new Color(210, 229, 248));
+        table.setSelectionForeground(Color.BLACK);
+        table.getTableHeader().setBackground(NAVY);
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+    }
     private static JComboBox<String> licenseBox() {
         JComboBox<String> box = new JComboBox<>(new String[]{"A1", "A2", "A", "B1", "B2", "C", "D", "E", "F"});
         box.setBorder(BorderFactory.createTitledBorder("Hạng bằng"));
