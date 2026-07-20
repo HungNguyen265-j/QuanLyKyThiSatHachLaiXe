@@ -41,15 +41,19 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
         JTextField id = field("Mã người thi"), name = field("Họ tên"), citizen = field("CCCD"), phone = field("Điện thoại");
+        id.setEditable(false);
+        id.setText("Tự động");
         JDateChooser birth = dateField("Ngày sinh");
         JComboBox<String> license = licenseBox();
         for (JComponent input : new JComponent[]{id, name, birth, citizen, phone, license}) form.add(input);
         JButton add = new JButton("Thêm người thi");
         add.addActionListener(e -> run(() -> {
+            id.setText(manager.nextCandidateId());
             NguoiThi candidate = new NguoiThi(id.getText(), name.getText(), toLocalDate(birth), citizen.getText(), "Chưa cập nhật", phone.getText(), (String) license.getSelectedItem(), 0);
             manager.addCandidate(candidate);
             candidateModel.addRow(new Object[]{candidate.getId(), candidate.getFullName(), candidate.getBirthDate(), candidate.getCitizenId(), candidate.getLicenseClass(), candidate.getProfileStatus()});
             clear(id, name, citizen, phone);
+            id.setText("Tự động");
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(candidateModel)), BorderLayout.CENTER);
@@ -81,14 +85,18 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 5, 6, 6));
         JTextField id = field("Mã giám thị"), name = field("Họ tên"), phone = field("Điện thoại"), position = field("Chức vụ");
+        id.setEditable(false);
+        id.setText("Tự động");
         JDateChooser birth = dateField("Ngày sinh");
         for (JComponent input : new JComponent[]{id, name, birth, phone, position}) form.add(input);
         JButton add = new JButton("Thêm giám thị");
         add.addActionListener(e -> run(() -> {
+            id.setText(manager.nextInvigilatorId());
             GiamThi invigilator = new GiamThi(id.getText(), name.getText(), toLocalDate(birth), phone.getText(), position.getText());
             manager.addInvigilator(invigilator);
             invigilatorModel.addRow(new Object[]{invigilator.getId(), invigilator.getFullName(), invigilator.getBirthDate(), invigilator.getPhone(), invigilator.getPosition()});
             clear(id, name, phone, position);
+            id.setText("Tự động");
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(invigilatorModel)), BorderLayout.CENTER);

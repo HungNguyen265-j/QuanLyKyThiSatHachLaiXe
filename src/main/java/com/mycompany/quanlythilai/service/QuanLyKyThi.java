@@ -18,7 +18,9 @@ public final class QuanLyKyThi {
             throw new IllegalArgumentException("Số CCCD đã tồn tại trong hệ thống");
         putNew(candidates, candidate.getId(), candidate, "người thi");
     }
+    public String nextCandidateId() { return nextId("NT", candidates.keySet()); }
     public void addInvigilator(GiamThi invigilator) { putNew(invigilators, invigilator.getId(), invigilator, "giám thị"); }
+    public String nextInvigilatorId() { return nextId("GT", invigilators.keySet()); }
     public void updateCandidate(NguoiThi candidate) {
         if (candidates.values().stream().anyMatch(c -> !c.getId().equals(candidate.getId()) && c.getCitizenId().equals(candidate.getCitizenId())))
             throw new IllegalArgumentException("Số CCCD đã tồn tại trong hệ thống");
@@ -51,6 +53,12 @@ public final class QuanLyKyThi {
     public long failedCount() { return results.values().stream().filter(r -> r.getStatus() == Enums.ResultStatus.KHONG_DAT).count(); }
 
     private static <T> void putNew(Map<String, T> map, String id, T value, String label) { if (map.putIfAbsent(id, value) != null) throw new IllegalArgumentException("Trùng mã " + label); }
+    private static String nextId(String prefix, Collection<String> ids) {
+        int number = 1;
+        String id;
+        do { id = String.format("%s%03d", prefix, number++); } while (ids.contains(id));
+        return id;
+    }
     private static <T> void replace(Map<String, T> map, String id, T value, String label) { if (!map.containsKey(id)) throw new NoSuchElementException("Không tìm thấy " + label + ": " + id); map.put(id, value); }
     private static <T> void requireExists(Map<String, T> map, String id, String label) { if (!map.containsKey(id)) throw new NoSuchElementException("Không tìm thấy " + label + ": " + id); }
     private static boolean contains(String source, String keyword) { return source.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT)); }
