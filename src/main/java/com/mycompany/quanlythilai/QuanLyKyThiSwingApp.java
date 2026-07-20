@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 
 /** Main desktop UI for the driving-license examination system. */
 public final class QuanLyKyThiSwingApp extends JFrame {
@@ -38,14 +40,16 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private JPanel candidatePanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
-        JTextField id = field("Mã người thi"), name = field("Họ tên"), birth = field("Ngày sinh yyyy-MM-dd"), citizen = field("CCCD"), phone = field("Điện thoại"), license = field("Hạng bằng");
-        for (JTextField input : new JTextField[]{id, name, birth, citizen, phone, license}) form.add(input);
+        JTextField id = field("Mã người thi"), name = field("Họ tên"), citizen = field("CCCD"), phone = field("Điện thoại");
+        JSpinner birth = dateField("Ngày sinh");
+        JComboBox<String> license = licenseBox();
+        for (JComponent input : new JComponent[]{id, name, birth, citizen, phone, license}) form.add(input);
         JButton add = new JButton("Thêm người thi");
         add.addActionListener(e -> run(() -> {
-            NguoiThi candidate = new NguoiThi(id.getText(), name.getText(), LocalDate.parse(birth.getText()), citizen.getText(), "Chưa cập nhật", phone.getText(), license.getText(), 0);
+            NguoiThi candidate = new NguoiThi(id.getText(), name.getText(), toLocalDate(birth), citizen.getText(), "Chưa cập nhật", phone.getText(), (String) license.getSelectedItem(), 0);
             manager.addCandidate(candidate);
             candidateModel.addRow(new Object[]{candidate.getId(), candidate.getFullName(), candidate.getBirthDate(), candidate.getCitizenId(), candidate.getLicenseClass(), candidate.getProfileStatus()});
-            clear(id, name, birth, citizen, phone, license);
+            clear(id, name, citizen, phone);
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(candidateModel)), BorderLayout.CENTER);
@@ -56,14 +60,15 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private JPanel examPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 6, 6, 6));
-        JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), license = field("Hạng bằng"), location = field("Địa điểm"), date = field("Ngày thi yyyy-MM-dd"), invigilator = field("Mã giám thị");
-        for (JTextField input : new JTextField[]{id, name, license, location, date, invigilator}) form.add(input);
+        JTextField id = field("Mã kỳ thi"), name = field("Tên kỳ thi"), location = field("Địa điểm"), date = field("Ngày thi yyyy-MM-dd"), invigilator = field("Mã giám thị");
+        JComboBox<String> license = licenseBox();
+        for (JComponent input : new JComponent[]{id, name, license, location, date, invigilator}) form.add(input);
         JButton add = new JButton("Thêm kỳ thi");
         add.addActionListener(e -> run(() -> {
-            KyThi exam = new KyThi(id.getText(), name.getText(), license.getText(), location.getText(), LocalDate.parse(date.getText()), invigilator.getText());
+            KyThi exam = new KyThi(id.getText(), name.getText(), (String) license.getSelectedItem(), location.getText(), LocalDate.parse(date.getText()), invigilator.getText());
             manager.addExam(exam);
             examModel.addRow(new Object[]{exam.getId(), exam.getName(), exam.getLicenseClass(), exam.getLocation(), exam.getExamDate(), 0, exam.getStatus()});
-            clear(id, name, license, location, date, invigilator);
+            clear(id, name, location, date, invigilator);
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(examModel)), BorderLayout.CENTER);
@@ -74,14 +79,15 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private JPanel invigilatorPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         JPanel form = new JPanel(new GridLayout(2, 5, 6, 6));
-        JTextField id = field("Mã giám thị"), name = field("Họ tên"), birth = field("Ngày sinh yyyy-MM-dd"), phone = field("Điện thoại"), position = field("Chức vụ");
-        for (JTextField input : new JTextField[]{id, name, birth, phone, position}) form.add(input);
+        JTextField id = field("Mã giám thị"), name = field("Họ tên"), phone = field("Điện thoại"), position = field("Chức vụ");
+        JSpinner birth = dateField("Ngày sinh");
+        for (JComponent input : new JComponent[]{id, name, birth, phone, position}) form.add(input);
         JButton add = new JButton("Thêm giám thị");
         add.addActionListener(e -> run(() -> {
-            GiamThi invigilator = new GiamThi(id.getText(), name.getText(), LocalDate.parse(birth.getText()), phone.getText(), position.getText());
+            GiamThi invigilator = new GiamThi(id.getText(), name.getText(), toLocalDate(birth), phone.getText(), position.getText());
             manager.addInvigilator(invigilator);
             invigilatorModel.addRow(new Object[]{invigilator.getId(), invigilator.getFullName(), invigilator.getBirthDate(), invigilator.getPhone(), invigilator.getPosition()});
-            clear(id, name, birth, phone, position);
+            clear(id, name, phone, position);
         }));
         panel.add(form, BorderLayout.NORTH);
         panel.add(new JScrollPane(new JTable(invigilatorModel)), BorderLayout.CENTER);
@@ -138,6 +144,20 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     }
 
     private static JTextField field(String tooltip) { JTextField field = new JTextField(); field.setToolTipText(tooltip); field.setBorder(BorderFactory.createTitledBorder(tooltip)); return field; }
+    private static JComboBox<String> licenseBox() {
+        JComboBox<String> box = new JComboBox<>(new String[]{"A1", "A2", "A", "B1", "B2", "C", "D", "E", "F"});
+        box.setBorder(BorderFactory.createTitledBorder("Hạng bằng"));
+        return box;
+    }
+    private static JSpinner dateField(String title) {
+        JSpinner spinner = new JSpinner(new SpinnerDateModel(new Date(), null, null, java.util.Calendar.DAY_OF_MONTH));
+        spinner.setEditor(new JSpinner.DateEditor(spinner, "dd/MM/yyyy"));
+        spinner.setBorder(BorderFactory.createTitledBorder(title));
+        return spinner;
+    }
+    private static LocalDate toLocalDate(JSpinner spinner) {
+        return ((Date) spinner.getValue()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
     private static void clear(JTextField... fields) { for (JTextField field : fields) field.setText(""); }
     private static void run(Runnable action) { try { action.run(); } catch (RuntimeException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.ERROR_MESSAGE); } }
 
