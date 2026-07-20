@@ -52,6 +52,9 @@ public final class QuanLyKyThi {
     public long passedCount() { return results.values().stream().filter(r -> r.getStatus() == Enums.ResultStatus.DAT).count(); }
     public long failedCount() { return results.values().stream().filter(r -> r.getStatus() == Enums.ResultStatus.KHONG_DAT).count(); }
     public long testedCount() { return results.size(); }
+    public Map<String, Long> candidateCountByLicense() {
+        return candidates.values().stream().collect(Collectors.groupingBy(NguoiThi::getLicenseClass, TreeMap::new, Collectors.counting()));
+    }
 
     private static <T> void putNew(Map<String, T> map, String id, T value, String label) { if (map.putIfAbsent(id, value) != null) throw new IllegalArgumentException("Trùng mã " + label); }
     private static String nextId(String prefix, Collection<String> ids) {

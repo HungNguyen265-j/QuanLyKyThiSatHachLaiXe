@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.print.PrinterException;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Map;
 
 /** Main desktop UI for the driving-license examination system. */
 public final class QuanLyKyThiSwingApp extends JFrame {
@@ -22,6 +23,9 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private final DefaultTableModel invigilatorModel = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "Điện thoại", "Chức vụ"}, 0);
     private final JLabel statisticLabel = new JLabel();
     private final StatisticsChart statisticsChart = new StatisticsChart();
+    private final StatusDonutChart statusChart = new StatusDonutChart();
+    private final LicenseBarChart licenseChart = new LicenseBarChart();
+    private final RateChart rateChart = new RateChart();
     private final JLabel overviewLabel = new JLabel();
     private JLabel overviewCandidates;
     private JLabel overviewExams;
@@ -199,7 +203,10 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         print.addActionListener(e -> printStatistics());
         actions.add(refresh); actions.add(print);
         panel.add(statisticLabel, BorderLayout.NORTH);
-        panel.add(statisticsChart, BorderLayout.CENTER);
+        JPanel charts = new JPanel(new GridLayout(2, 2, 12, 12));
+        charts.setOpaque(false);
+        charts.add(statisticsChart); charts.add(statusChart); charts.add(rateChart); charts.add(licenseChart);
+        panel.add(charts, BorderLayout.CENTER);
         panel.add(actions, BorderLayout.SOUTH);
         updateStatistics();
         return panel;
@@ -210,6 +217,9 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         long tested = manager.testedCount();
         statisticLabel.setText(String.format("<html><div style='text-align:center'>ĐĂNG KÝ: %d&nbsp;&nbsp;&nbsp; ĐÃ THI: %d&nbsp;&nbsp;&nbsp; CHƯA THI: %d<br>ĐẠT: %d&nbsp;&nbsp;&nbsp; KHÔNG ĐẠT: %d&nbsp;&nbsp;&nbsp; TỶ LỆ ĐẬU: %.1f%%&nbsp;&nbsp;&nbsp; DOANH THU: %d VNĐ</div></html>", registered, tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
         statisticsChart.setValues(registered, tested);
+        statusChart.setValues(ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), Math.max(0, registered - tested));
+        rateChart.setValue(ThongKe.tyLeDau(manager));
+        licenseChart.setValues(manager.candidateCountByLicense());
         overviewLabel.setText(String.format("Tổng quan hệ thống: %d người thi, %d kỳ thi, %d đã thi, %d chưa thi, %d đạt và %d không đạt.", registered, manager.getExams().size(), tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager)));
         overviewCandidates.setText(String.valueOf(registered));
         overviewExams.setText(String.valueOf(manager.getExams().size()));
@@ -314,6 +324,46 @@ public final class QuanLyKyThiSwingApp extends JFrame {
             g.setColor(NAVY); g.setFont(new Font("Arial", Font.BOLD, 15));
             g.drawString(String.valueOf(value), x + 47, base - height - 10);
             g.drawString(label, x + 23, base + 25);
+        }
+    }
+
+    private static final class StatusDonutChart extends JPanel {
+        private long passed, failed, notTested;
+        private StatusDonutChart() { setBackground(Color.WHITE); }
+        private void setValues(long passed, long failed, long notTested) { this.passed = passed; this.failed = failed; this.notTested = notTested; repaint(); }
+        @Override protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics); Graphics2D g = (Graphics2D) graphics.create();
+            int total = (int) Math.max(1, passed + failed + notTested), size = Math.min(getWidth(), getHeight()) - 70, x = (getWidth() - size) / 2, y = 20;
+            int start = 90; Color[] colors = {new Color(24, 157, 111), new Color(224, 48, 48), new Color(40, 95, 210)}; long[] values = {passed, failed, notTested};
+            for (int i = 0; i < values.length; i++) { int angle = (int) Math.round(values[i] * 360.0 / total); g.setColor(colors[i]); g.fillArc(x, y, size, size, start, -angle); start -= angle; }
+            g.setColor(Color.WHITE); int hole = size / 2; g.fillOval(x + (size - hole) / 2, y + (size - hole) / 2, hole, hole);
+            g.setColor(NAVY); g.setFont(new Font("Arial", Font.BOLD, 13)); g.drawString("Trạng thái thí sinh", 12, getHeight() - 12); g.dispose();
+        }
+    }
+
+    private static final class RateChart extends JPanel {
+        private double rate;
+        private RateChart() { setBackground(Color.WHITE); }
+        private void setValue(double rate) { this.rate = rate; repaint(); }
+        @Override protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics); Graphics2D g = (Graphics2D) graphics.create();
+            int left = 38, right = getWidth() - 25, base = getHeight() - 42, top = 32;
+            g.setColor(new Color(225, 231, 240)); g.drawLine(left, top, left, base); g.drawLine(left, base, right, base);
+            int y = base - (int) ((base - top) * rate / 100.0); g.setColor(BLUE); g.setStroke(new BasicStroke(3)); g.drawLine(left, y, right, y); g.fillOval(right - 6, y - 6, 12, 12);
+            g.setColor(NAVY); g.setFont(new Font("Arial", Font.BOLD, 13)); g.drawString("Tỷ lệ đạt hiện tại", 12, 18); g.drawString(String.format("%.1f%%", rate), right - 45, y - 10); g.dispose();
+        }
+    }
+
+    private static final class LicenseBarChart extends JPanel {
+        private Map<String, Long> values = Map.of();
+        private LicenseBarChart() { setBackground(Color.WHITE); }
+        private void setValues(Map<String, Long> values) { this.values = values; repaint(); }
+        @Override protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics); Graphics2D g = (Graphics2D) graphics.create();
+            g.setColor(NAVY); g.setFont(new Font("Arial", Font.BOLD, 13)); g.drawString("Thí sinh theo hạng bằng", 12, 18);
+            long max = Math.max(1, values.values().stream().mapToLong(Long::longValue).max().orElse(1)); int y = 42;
+            for (Map.Entry<String, Long> entry : values.entrySet()) { g.setColor(new Color(207, 224, 248)); g.fillRect(70, y, getWidth() - 100, 16); g.setColor(BLUE); g.fillRect(70, y, (int) ((getWidth() - 100) * entry.getValue() / (double) max), 16); g.setColor(NAVY); g.drawString(entry.getKey(), 18, y + 13); y += 28; }
+            g.dispose();
         }
     }
 
