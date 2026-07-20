@@ -164,5 +164,36 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private static void clear(JTextField... fields) { for (JTextField field : fields) field.setText(""); }
     private static void run(Runnable action) { try { action.run(); } catch (RuntimeException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.ERROR_MESSAGE); } }
 
-    public static void main(String[] args) { SwingUtilities.invokeLater(() -> new QuanLyKyThiSwingApp().setVisible(true)); }
+    private static final class LoginFrame extends JFrame {
+        private final JTextField username = new JTextField();
+        private final JPasswordField password = new JPasswordField();
+
+        private LoginFrame() {
+            setTitle("Đăng nhập hệ thống sát hạch lái xe");
+            setDefaultCloseOperation(EXIT_ON_CLOSE);
+            setSize(420, 250);
+            setLocationRelativeTo(null);
+            JPanel form = new JPanel(new GridLayout(3, 2, 8, 8));
+            form.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+            form.add(new JLabel("Tài khoản:")); form.add(username);
+            form.add(new JLabel("Mật khẩu:")); form.add(password);
+            JButton login = new JButton("Đăng nhập");
+            form.add(new JLabel("Demo: admin / 123456")); form.add(login);
+            login.addActionListener(e -> authenticate());
+            getRootPane().setDefaultButton(login);
+            add(form);
+        }
+
+        private void authenticate() {
+            if ("admin".equals(username.getText().trim()) && "123456".equals(String.valueOf(password.getPassword()))) {
+                dispose();
+                new QuanLyKyThiSwingApp().setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Tài khoản hoặc mật khẩu không đúng", "Đăng nhập thất bại", JOptionPane.ERROR_MESSAGE);
+                password.setText("");
+            }
+        }
+    }
+
+    public static void main(String[] args) { SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true)); }
 }

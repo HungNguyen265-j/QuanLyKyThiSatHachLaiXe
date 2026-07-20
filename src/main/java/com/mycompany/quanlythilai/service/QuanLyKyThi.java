@@ -13,9 +13,17 @@ public final class QuanLyKyThi {
     private final Map<String, KetQuaThi> results = new LinkedHashMap<>();
     private final Map<String, PhiDangKy> fees = new LinkedHashMap<>();
 
-    public void addCandidate(NguoiThi candidate) { putNew(candidates, candidate.getId(), candidate, "người thi"); }
+    public void addCandidate(NguoiThi candidate) {
+        if (candidates.values().stream().anyMatch(c -> c.getCitizenId().equals(candidate.getCitizenId())))
+            throw new IllegalArgumentException("Số CCCD đã tồn tại trong hệ thống");
+        putNew(candidates, candidate.getId(), candidate, "người thi");
+    }
     public void addInvigilator(GiamThi invigilator) { putNew(invigilators, invigilator.getId(), invigilator, "giám thị"); }
-    public void updateCandidate(NguoiThi candidate) { replace(candidates, candidate.getId(), candidate, "người thi"); }
+    public void updateCandidate(NguoiThi candidate) {
+        if (candidates.values().stream().anyMatch(c -> !c.getId().equals(candidate.getId()) && c.getCitizenId().equals(candidate.getCitizenId())))
+            throw new IllegalArgumentException("Số CCCD đã tồn tại trong hệ thống");
+        replace(candidates, candidate.getId(), candidate, "người thi");
+    }
     public void updateInvigilator(GiamThi invigilator) { replace(invigilators, invigilator.getId(), invigilator, "giám thị"); }
     public void removeCandidate(String id) { candidates.remove(id); fees.remove(id); }
     public void removeInvigilator(String id) { invigilators.remove(id); }
