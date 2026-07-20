@@ -51,6 +51,7 @@ public final class QuanLyKyThi {
     public long totalCollected() { return fees.values().stream().filter(f -> f.getStatus() == Enums.PaymentStatus.DA_DONG).mapToLong(PhiDangKy::getAmount).sum(); }
     public long passedCount() { return results.values().stream().filter(r -> r.getStatus() == Enums.ResultStatus.DAT).count(); }
     public long failedCount() { return results.values().stream().filter(r -> r.getStatus() == Enums.ResultStatus.KHONG_DAT).count(); }
+    public long testedCount() { return results.size(); }
 
     private static <T> void putNew(Map<String, T> map, String id, T value, String label) { if (map.putIfAbsent(id, value) != null) throw new IllegalArgumentException("Trùng mã " + label); }
     private static String nextId(String prefix, Collection<String> ids) {

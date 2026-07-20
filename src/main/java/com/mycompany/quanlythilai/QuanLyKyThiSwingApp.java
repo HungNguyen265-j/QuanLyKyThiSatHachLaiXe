@@ -7,6 +7,7 @@ import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.print.PrinterException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
@@ -20,6 +21,7 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private final DefaultTableModel examModel = new DefaultTableModel(new String[]{"Mã kỳ thi", "Tên kỳ thi", "Hạng", "Địa điểm", "Ngày thi", "Số người", "Trạng thái"}, 0);
     private final DefaultTableModel invigilatorModel = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "Điện thoại", "Chức vụ"}, 0);
     private final JLabel statisticLabel = new JLabel();
+    private final StatisticsChart statisticsChart = new StatisticsChart();
 
     public QuanLyKyThiSwingApp() {
         setTitle("Quản lý các kỳ thi sát hạch lái xe");
@@ -147,17 +149,33 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         statisticLabel.setHorizontalAlignment(SwingConstants.CENTER);
         statisticLabel.setFont(new Font("Arial", Font.BOLD, 20));
         statisticLabel.setForeground(NAVY);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
+        actions.setOpaque(false);
         JButton refresh = new JButton("Cập nhật thống kê");
-        styleButton(refresh);
+        JButton print = new JButton("In thống kê");
+        styleButton(refresh); styleButton(print);
         refresh.addActionListener(e -> updateStatistics());
-        panel.add(statisticLabel, BorderLayout.CENTER);
-        panel.add(refresh, BorderLayout.SOUTH);
+        print.addActionListener(e -> printStatistics());
+        actions.add(refresh); actions.add(print);
+        panel.add(statisticLabel, BorderLayout.NORTH);
+        panel.add(statisticsChart, BorderLayout.CENTER);
+        panel.add(actions, BorderLayout.SOUTH);
         updateStatistics();
         return panel;
     }
 
     private void updateStatistics() {
-        statisticLabel.setText(String.format("Người thi: %d | Đạt: %d | Không đạt: %d | Tỷ lệ đậu: %.1f%% | Doanh thu: %d VNĐ", ThongKe.soNguoiThi(manager), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
+        long registered = ThongKe.soNguoiThi(manager);
+        long tested = manager.testedCount();
+        statisticLabel.setText(String.format("<html><div style='text-align:center'>ĐĂNG KÝ: %d&nbsp;&nbsp;&nbsp; ĐÃ THI: %d&nbsp;&nbsp;&nbsp; CHƯA THI: %d<br>ĐẠT: %d&nbsp;&nbsp;&nbsp; KHÔNG ĐẠT: %d&nbsp;&nbsp;&nbsp; TỶ LỆ ĐẬU: %.1f%%&nbsp;&nbsp;&nbsp; DOANH THU: %d VNĐ</div></html>", registered, tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
+        statisticsChart.setValues(registered, tested);
+    }
+
+    private void printStatistics() {
+        long registered = ThongKe.soNguoiThi(manager);
+        long tested = manager.testedCount();
+        JTextArea report = new JTextArea(String.format("THỐNG KÊ KỲ THI SÁT HẠCH LÁI XE\n\nTổng người đăng ký: %d\nĐã thi: %d\nChưa thi: %d\nĐạt: %d\nKhông đạt: %d\nTỷ lệ đậu: %.1f%%\nDoanh thu: %d VNĐ\n", registered, tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
+        try { report.print(); } catch (PrinterException ex) { JOptionPane.showMessageDialog(this, "Không thể in thống kê: " + ex.getMessage(), "Lỗi in", JOptionPane.ERROR_MESSAGE); }
     }
 
     private void loadDemoData() {
@@ -228,6 +246,30 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     }
     private static void clear(JTextField... fields) { for (JTextField field : fields) field.setText(""); }
     private static void run(Runnable action) { try { action.run(); } catch (RuntimeException ex) { JOptionPane.showMessageDialog(null, ex.getMessage(), "Dữ liệu không hợp lệ", JOptionPane.ERROR_MESSAGE); } }
+
+    private static final class StatisticsChart extends JPanel {
+        private long registered;
+        private long tested;
+        private StatisticsChart() { setPreferredSize(new Dimension(700, 300)); setBackground(Color.WHITE); }
+        private void setValues(long registered, long tested) { this.registered = registered; this.tested = tested; repaint(); }
+        @Override protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
+            Graphics2D g = (Graphics2D) graphics.create();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int base = getHeight() - 55, maxHeight = Math.max(30, getHeight() - 105);
+            long max = Math.max(1, Math.max(registered, tested));
+            drawBar(g, "Đăng ký", registered, 35, base, maxHeight, max, BLUE);
+            drawBar(g, "Đã thi", tested, 190, base, maxHeight, max, new Color(44, 166, 120));
+            g.dispose();
+        }
+        private void drawBar(Graphics2D g, String label, long value, int x, int base, int maxHeight, long max, Color color) {
+            int height = (int) (maxHeight * (value / (double) max));
+            g.setColor(color); g.fillRoundRect(x, base - height, 110, height, 12, 12);
+            g.setColor(NAVY); g.setFont(new Font("Arial", Font.BOLD, 15));
+            g.drawString(String.valueOf(value), x + 47, base - height - 10);
+            g.drawString(label, x + 23, base + 25);
+        }
+    }
 
     private static final class LoginFrame extends JFrame {
         private final JTextField username = new JTextField();
