@@ -22,6 +22,11 @@ public final class QuanLyKyThiSwingApp extends JFrame {
     private final DefaultTableModel invigilatorModel = new DefaultTableModel(new String[]{"Mã", "Họ tên", "Ngày sinh", "Điện thoại", "Chức vụ"}, 0);
     private final JLabel statisticLabel = new JLabel();
     private final StatisticsChart statisticsChart = new StatisticsChart();
+    private final JLabel overviewLabel = new JLabel();
+    private JLabel overviewCandidates;
+    private JLabel overviewExams;
+    private JLabel overviewRate;
+    private JLabel overviewNotTested;
 
     public QuanLyKyThiSwingApp() {
         setTitle("Quản lý các kỳ thi sát hạch lái xe");
@@ -50,12 +55,48 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         tabs.setBackground(LIGHT);
         tabs.setForeground(NAVY);
         tabs.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        tabs.addTab("Tổng quan", overviewPanel());
         tabs.addTab("Người thi", candidatePanel());
         tabs.addTab("Kỳ thi và lịch thi", examPanel());
         tabs.addTab("Giám thị", invigilatorPanel());
         tabs.addTab("Thống kê", statisticPanel());
         add(tabs, BorderLayout.CENTER);
         loadDemoData();
+    }
+
+    private JPanel overviewPanel() {
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(LIGHT);
+        JPanel cards = new JPanel(new GridLayout(1, 4, 14, 14));
+        cards.setOpaque(false);
+        overviewCandidates = new JLabel("0");
+        overviewExams = new JLabel("0");
+        overviewRate = new JLabel("0%");
+        overviewNotTested = new JLabel("0");
+        cards.add(summaryCard("TỔNG NGƯỜI THI", overviewCandidates, BLUE));
+        cards.add(summaryCard("KỲ SÁT HẠCH", overviewExams, new Color(111, 72, 190)));
+        cards.add(summaryCard("TỶ LỆ ĐẠT", overviewRate, new Color(28, 151, 105)));
+        cards.add(summaryCard("CHƯA THI", overviewNotTested, new Color(213, 128, 30)));
+        overviewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        overviewLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        overviewLabel.setForeground(new Color(75, 91, 110));
+        panel.add(cards, BorderLayout.NORTH);
+        panel.add(overviewLabel, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel summaryCard(String title, JLabel valueLabel, Color accent) {
+        JPanel card = new JPanel(new BorderLayout(8, 8));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 5, 0, 0, accent), BorderFactory.createEmptyBorder(18, 15, 18, 15)));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setForeground(new Color(90, 105, 122));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        valueLabel.setForeground(NAVY);
+        valueLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
     }
 
     private JPanel candidatePanel() {
@@ -169,6 +210,11 @@ public final class QuanLyKyThiSwingApp extends JFrame {
         long tested = manager.testedCount();
         statisticLabel.setText(String.format("<html><div style='text-align:center'>ĐĂNG KÝ: %d&nbsp;&nbsp;&nbsp; ĐÃ THI: %d&nbsp;&nbsp;&nbsp; CHƯA THI: %d<br>ĐẠT: %d&nbsp;&nbsp;&nbsp; KHÔNG ĐẠT: %d&nbsp;&nbsp;&nbsp; TỶ LỆ ĐẬU: %.1f%%&nbsp;&nbsp;&nbsp; DOANH THU: %d VNĐ</div></html>", registered, tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager), ThongKe.tyLeDau(manager), ThongKe.doanhThu(manager)));
         statisticsChart.setValues(registered, tested);
+        overviewLabel.setText(String.format("Tổng quan hệ thống: %d người thi, %d kỳ thi, %d đã thi, %d chưa thi, %d đạt và %d không đạt.", registered, manager.getExams().size(), tested, Math.max(0, registered - tested), ThongKe.soNguoiDat(manager), ThongKe.soNguoiKhongDat(manager)));
+        overviewCandidates.setText(String.valueOf(registered));
+        overviewExams.setText(String.valueOf(manager.getExams().size()));
+        overviewRate.setText(String.format("%.1f%%", ThongKe.tyLeDau(manager)));
+        overviewNotTested.setText(String.valueOf(Math.max(0, registered - tested)));
     }
 
     private void printStatistics() {
